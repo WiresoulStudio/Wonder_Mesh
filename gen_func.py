@@ -1,26 +1,62 @@
-#___________________________________/
-#___Author:_________Vit_Prochazka___/
-#___Created:________15.12.2015______/
-#___Last_modified:__17.08.2017______/
-#___Version:________0.3_____________/
-#___________________________________/
+# __________________________________/
+# __Author:_________Vit_Prochazka___/
+# __Created:________15.12.2015______/
+# __Last_modified:__31.03.2018______/
+# __Version:________0.4_____________/
+# __________________________________/
 
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Quaternion
+from math import pi
+from typing import List
+
 
 def create_mesh_object(context, verts, edges, faces, name):
 
     # Create new mesh
     mesh = bpy.data.meshes.new(name)
-
-    # Make a mesh from a list of verts/edges/faces.
     mesh.from_pydata(verts, edges, faces)
-
-    # Update mesh geometry after adding stuff.
     mesh.update()
 
     from bpy_extras import object_utils
     return object_utils.object_data_add(context, mesh, operator=None)
+
+
+def circleVerts(radius: float, seg: int, IDs_Offset: int):
+    verts = []
+    vertIDs = []
+
+    if radius <= 0:
+        return [Vector((0, 0, 0))], [IDs_Offset]
+
+    if seg < 3:
+        seg = 3
+
+    stepAngle = (2 * pi) / seg
+
+    for i in range(seg):
+        vertIDs.append(i + IDs_Offset)
+        quat = Quaternion((0, 0, 1), i * stepAngle)
+        verts.append(quat * Vector((radius, 0.0, 0.0)))
+
+    return verts, vertIDs
+
+
+def moveVerts(
+            verts: List[Vector],
+            offset: Vector):
+
+    for i in range(len(verts)):
+        verts[i] += offset
+
+
+def rotateVerts(
+            verts: List[Vector],
+            axis: Quaternion):
+
+    for i, vel in enumerate(verts):
+        verts[i] = axis * vel
+
 
 def bridgeLoops(loop1, loop2, close):
     faces = []
@@ -28,33 +64,53 @@ def bridgeLoops(loop1, loop2, close):
     if len(loop1) != len(loop2):
         return None
 
-    for i in range(len(loop1) -1):
-        face = (loop1[i], loop1[i+1], loop2[i+1], loop2[i])
+    for i in range(len(loop1) - 1):
+        face = (loop1[i], loop1[i + 1], loop2[i + 1], loop2[i])
         faces.append(face)
 
     if close:
-        faces.append((loop1[-1], loop1[0], loop2[0], loop2[-1]))
+        faces.append((loop1[- 1], loop1[0], loop2[0], loop2[- 1]))
 
     return faces
 
-#subsurf
+
+def fanClose(loop, point, closed = True, flipped = False):
+    faces = []
+    prevID = None
+    for idx in loop:
+        if prevID is None and closed:
+            if flipped:
+                faces.append((loop[-1], point, idx))
+            else:
+                faces.append((loop[-1], idx, point))
+        elif prevID is not None:
+            if flipped:
+                faces.append((prevID, point, idx))
+            else:
+                faces.append((prevID, idx, point))
+        prevID = idx
+
+    return faces
+
+
+# subsurf
 def findEdges(faces):
-    edges = [] #edge(vertsIDs)
-    borders = [] #border(edgesIDs)
+    edges = []  # edge(vertsIDs)
+    borders = []  # border(edgesIDs)
 
     for face in faces:
         polys = len(face)
         border = []
         for i in range(polys):
-            if i == polys -1:
+            if i == polys - 1:
                 edgeA, edgeB = face[i], face[0]
             else:
-                edgeA, edgeB = face[i], face[i+1]
-            #sort indexes
+                edgeA, edgeB = face[i], face[i + 1]
+            # sort indexes
             if edgeA > edgeB:
                 edgeA, edgeB = edgeB, edgeA
             newEdge = (edgeA, edgeB)
-            #is it a really NEW edge?
+            # is it a really NEW edge?
             if newEdge not in edges:
                 border.append(len(edges))
                 edges.append(newEdge)
@@ -65,18 +121,20 @@ def findEdges(faces):
 
     return edges, borders
 
-def VectorMedian (IDs, verts):
-    outVec = Vector((0,0,0))
+
+def VectorMedian(IDs, verts):
+    outVec = Vector((0, 0, 0))
     for IDX in IDs:
         outVec += verts[IDX]
     outVec /= len(IDs)
     return outVec
 
+
 def subdivide(verts, edges, faces, tris):
     Sedges, borders = findEdges(faces)
     NewFaces = []
     vertIDsOffset = len(verts)
-    #midpoints
+    # midpoints
     midVerts = []
     for line in Sedges:
         midVerts.append((verts[line[0]] + verts[line[1]]) / 2)

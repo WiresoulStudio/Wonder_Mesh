@@ -1,16 +1,16 @@
-#___________________________________/
-#___Author:_________Vit_Prochazka___/
-#___Created:________15.12.2015______/
-#___Last_modified:__11.08.2017______/
-#___Version:________0.2_____________/
-#___________________________________/
+# __________________________________/
+# __Author:_________Vit_Prochazka___/
+# __Created:________15.12.2015______/
+# __Last_modified:__03.04.2018______/
+# __Version:________1.0_____________/
+# __________________________________/
 
 bl_info = {
         "name": "Wonder_Mesh",
         "category": "Object",
         "author": "Vit Prochazka",
-        "version": (0, 2),
-        "blender": (2, 76),
+        "version": (1, 0),
+        "blender": (2, 79),
         "description": "Modify primitives after creation.",
         "warning": "Unexpected bugs can be expected!"
         }
@@ -19,30 +19,38 @@ import bpy
 from bpy.props import (
     EnumProperty
 )
-#from mathutils import *
 from .W_Plane import registerWPlane, unregisterWPlane, drawWPlanePanel
 from .W_Box import registerWBox, unregisterWBox, drawWBoxPanel
 from .W_Ring import registerWRing, unregisterWRing, drawWRingPanel
 from .W_Tube import registerWTube, unregisterWTube, drawWTubePanel
 from .W_Sphere import registerWSphere, unregisterWSphere, drawWSpherePanel
 from .W_Screw import registerWScrew, unregisterWScrew, drawWScrewPanel
+from .W_Cone import registerWCone, unregisterWCone, drawWConePanel
+from .W_Capsule import registerWCapsule, unregisterWCapsule, drawWCapsulePanel
+from .W_Torus import registerWTorus, unregisterWTorus, drawWTorusPanel
+
 
 class WAddMenu(bpy.types.Menu):
     bl_label = "W_Primitives"
     bl_idname = "OBJECT_MT_W_Primitives_menu"
 
-    def draw(self,context):
+    def draw(self, context):
         lay_out = self.layout
         lay_out.operator(operator="mesh.make_wplane", icon='MESH_PLANE')
         lay_out.operator(operator="mesh.make_wbox", icon='MESH_CUBE')
         lay_out.operator(operator="mesh.make_wring", icon='MESH_CIRCLE')
-        lay_out.operator(operator="mesh.make_wtube", icon='MESH_CYLINDER')
         lay_out.operator(operator="mesh.make_wsphere", icon='MESH_UVSPHERE')
+        lay_out.operator(operator="mesh.make_wtube", icon='MESH_CYLINDER')
+        lay_out.operator(operator="mesh.make_wcone", icon='MESH_CONE')
+        lay_out.operator(operator="mesh.make_wcapsule", icon='MESH_CAPSULE')
+        lay_out.operator(operator="mesh.make_wtorus", icon='MESH_TORUS')
         lay_out.operator(operator="mesh.make_wscrew", icon='MOD_SCREW')
+
 
 def draw_addMenu(self, context):
     lay_out = self.layout
     lay_out.menu(WAddMenu.bl_idname)
+
 
 class WAddPanel(bpy.types.Panel):
     """Creates a Panel in the Toolbar"""
@@ -53,15 +61,18 @@ class WAddPanel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_options = {'DEFAULT_CLOSED'}
 
-
     def draw(self, context):
         lay_out = self.layout.column(align=True)
         lay_out.operator(operator="mesh.make_wplane", icon='MESH_PLANE')
         lay_out.operator(operator="mesh.make_wbox", icon='MESH_CUBE')
         lay_out.operator(operator="mesh.make_wring", icon='MESH_CIRCLE')
-        lay_out.operator(operator="mesh.make_wtube", icon='MESH_CYLINDER')
         lay_out.operator(operator="mesh.make_wsphere", icon='MESH_UVSPHERE')
+        lay_out.operator(operator="mesh.make_wtube", icon='MESH_CYLINDER')
+        lay_out.operator(operator="mesh.make_wcone", icon='MESH_CONE')
+        lay_out.operator(operator="mesh.make_wcapsule", icon='MESH_CAPSULE')
+        lay_out.operator(operator="mesh.make_wtorus", icon='MESH_TORUS')
         lay_out.operator(operator="mesh.make_wscrew", icon='MOD_SCREW')
+
 
 class ConvertWMesh(bpy.types.Operator):
     """Convert WMesh to mesh"""
@@ -72,6 +83,7 @@ class ConvertWMesh(bpy.types.Operator):
     def execute(self, context):
         context.object.data.WType = 'NONE'
         return {'FINISHED'}
+
 
 class WEditPanel(bpy.types.Panel):
     """Creates a Panel in the data context of the properties editor"""
@@ -105,9 +117,17 @@ class WEditPanel(bpy.types.Panel):
                 drawWTubePanel(self, context)
             elif WType == 'WSPHERE':
                 drawWSpherePanel(self, context)
+            elif WType == 'WCONE':
+                drawWConePanel(self, context)
+            elif WType == 'WCAPSULE':
+                drawWCapsulePanel(self, context)
+            elif WType == 'WTORUS':
+                drawWTorusPanel(self, context)
             lay_out.separator()
-            lay_out.operator(operator="mesh.convert_w_mesh", icon='RECOVER_AUTO')
+            lay_out.operator(
+                operator="mesh.convert_w_mesh", icon='RECOVER_AUTO')
             lay_out.separator()
+
 
 def register():
     registerWPlane()
@@ -116,6 +136,9 @@ def register():
     registerWRing()
     registerWTube()
     registerWSphere()
+    registerWCone()
+    registerWCapsule()
+    registerWTorus()
 
     bpy.utils.register_class(WAddPanel)
     bpy.utils.register_class(WAddMenu)
@@ -131,7 +154,10 @@ def register():
         ('WSCREW', "WScrew", ""),
         ('WRING', "WRing", ""),
         ('WTUBE', "WTube", ""),
-        ('WSPHERE', "WSphere", "")
+        ('WSPHERE', "WSphere", ""),
+        ("WCONE", "WCone", ""),
+        ("WCAPSULE", "WCapsule", ""),
+        ("WTORUS", "WTorus", "")
     ]
 
     bpy.types.Mesh.WType = EnumProperty(
@@ -141,6 +167,7 @@ def register():
         default = 'NONE'
     )
 
+
 def unregister():
     unregisterWPlane()
     unregisterWBox()
@@ -148,6 +175,9 @@ def unregister():
     unregisterWRing()
     unregisterWTube()
     unregisterWSphere()
+    unregisterWCone()
+    unregisterWCapsule()
+    unregisterWTorus()
 
     bpy.utils.unregister_class(WAddPanel)
     bpy.utils.unregister_class(WAddMenu)
@@ -157,6 +187,7 @@ def unregister():
     bpy.types.INFO_MT_mesh_add.remove(draw_addMenu)
 
     del bpy.types.Mesh.WType
+
 
 if __name__ == "__main__":
     register()

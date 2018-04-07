@@ -1,252 +1,367 @@
-#___________________________________/
-#___Author:_________Vit_Prochazka___/
-#___Created:________18.12.2015______/
-#___Last_modified:__20.12.2015______/
-#___Version:________0.2_____________/
-#___________________________________/
+# __________________________________/
+# __Author:_________Vit_Prochazka___/
+# __Created:________16.12.2015______/
+# __Last_modified:__13.08.2017______/
+# __Version:________0.2_____________/
+# __________________________________/
+
+"""
+This file generates and modifies a cone-shaped mesh.
+"""
 
 import bpy
-from bpy.props import *
-from mathutils import *
-from W_Primitives.gen_func import *
-from math import *
+import bmesh
+from mathutils import Vector
+from bpy.props import (
+    BoolProperty,
+    IntProperty,
+    FloatProperty,
+    PointerProperty
+)
+from .gen_func import (
+    circleVerts as circ_V,
+    moveVerts as move_V,
+    fanClose,
+    bridgeLoops,
+    create_mesh_object as c_mesh
+)
 
-def primitive_Cone(radius_bottom=1.0, radius_top=0.0, height=2.0, seg_perimeter=24,
-                   seg_radius=1, seg_height=1, sector_from=0.0, sector_to=2*pi,
-                   orientation='Z', centered=False):
+WCone_Defaults = {
+    "radius_main": 1.0,
+    "radius_top": 0.0,
+    "height": 2.0,
+    "seg_perimeter": 24,
+    "seg_height": 1,
+    "seg_radius": 1,
+    "centered": False,
+    "smoothed": True
+}
 
+
+# Generating the vertices and polygons
+def primitive_Cone_ME(
+        radius_main = 1.0,
+        radius_top = 0.0,
+        height = 2.0,
+        seg_perimeter = 24,
+        seg_height = 1,
+        seg_radius = 1,
+        centered = False,
+        smoothed = True):
+
+    # Prepare empty lists
     verts = []
     edges = []
     faces = []
 
-    #set the proper vars
+    loops = []
+
+    # Set minimums
     if seg_perimeter < 3:
         seg_perimeter = 3
-    if sector_from > sector_to:
-        tmp = sector_to
-        sector_to = sector_from
-        sector_from = tmp
+    if seg_height < 1:
+        seg_height = 1
+    if seg_radius < 1:
+        seg_radius = 1
 
-    point_top = radius_top <= 0.0001
-    point_bottom = radius_bottom <= 0.0001
-    closed = sector_to - sector_from >= 2*pi
-    step_height = height / seg_height
+    # Add top and bottom center vertices
+    verts.append(Vector((0, 0, 0)))
+    verts.append(Vector((0, 0, height)))
 
-    if point_top and point_bottom:
-        #create just line
-        for h in range(seg_height +1):
-            verts.append(Vector((0.0, 0.0, h * step_height)))
-        for v in range(len(verts) -1):
-            edges.append((v, v+1))
-
-        if centered:
-            for v in verts:
-                v.z -= height /2
-        if orientation == 'X':
-            for v in verts:
-                v.x = v.z
-                v.z = 0.0
-        elif orientation == 'Y':
-            for v in verts:
-                v.y = v.z
-                v.z = 0.0
+    if radius_top == 0 and radius_main == 0:
+        edges.append((0, 1))
         return verts, edges, faces
 
-    step_angle = (sector_to - sector_from) / seg_perimeter
-    step_rad_bottom = radius_bottom / seg_radius
-    step_rad_top = radius_top / seg_radius
-    radius_growth = (radius_bottom - radius_top) / seg_height
-    seg_number = seg_perimeter +1
-    if closed:
-        seg_number = seg_perimeter
+    # Create base segmentation loops
+    if radius_main > 0:
+        if seg_radius > 1:
+            step = radius_main / seg_radius
+            for i in range(1, seg_radius):
+                newVerts, loop = circ_V(i * step, seg_perimeter, len(verts))
+                verts.extend(newVerts)
+                loops.append(loop)
 
-    #creation itself
-    vert_bottom = len(verts)
-    verts.append(Vector((0.0, 0.0, 0.0)))
-    vert_top = len(verts)
-    verts.append(Vector((0.0, 0.0, height)))
+        # Create the base corner circle
+        newVerts, loop = circ_V(radius_main, seg_perimeter, len(verts))
+        verts.extend(newVerts)
+        loops.append(loop)
 
-    lines = []
-    for s in range(seg_number):
-        quat = Quaternion((0, 0, 1), (s * step_angle) + sector_from)
-        line = []
-        #bottom line
-        #line.append(vert_bottom)
-        if not point_bottom:
-            for r in range(seg_radius):
-                line.append(len(verts))
-                verts.append(quat * Vector(((r+1) * step_rad_bottom, 0.0, 0.0)))
+    # Create the side segmentation loops
+    if seg_height > 1:
+        heightStep = height / seg_height
+        radiusStep = (radius_top - radius_main) / seg_height
+        for i in range(1, seg_height):
+            newRadius = radius_main + (i * radiusStep)
+            newVerts, loop = circ_V(newRadius, seg_perimeter, len(verts))
+            move_V(newVerts, Vector((0, 0, heightStep * i)))
+            verts.extend(newVerts)
+            loops.append(loop)
 
-        #outside
-        if seg_height > 1:
-            for h in range(seg_height -1):
-                line.append(len(verts))
-                verts.append(quat * Vector((radius_bottom - ((h+1)*radius_growth), 0.0, (h+1)*step_height)))
+    # Create top corner circle
+    if radius_top > 0:
+        newVerts, loop = circ_V(radius_top, seg_perimeter, len(verts))
+        move_V(newVerts, Vector((0, 0, height)))
+        verts.extend(newVerts)
+        loops.append(loop)
 
-        #top line
-        if not point_top:
-            for r in range(seg_radius):
-                line.append(len(verts))
-                verts.append(quat * Vector((radius_top - (r*step_rad_top), 0.0, height)))
+        # Create the top segmentation loops
+        if seg_radius > 1:
+            step = radius_top / seg_radius
+            for i in range(1, seg_radius):
+                newRadius = radius_top - (i * step)
+                newVerts, loop = circ_V(newRadius, seg_perimeter, len(verts))
+                move_V(newVerts, Vector((0, 0, height)))
+                verts.extend(newVerts)
+                loops.append(loop)
 
-        #line.append(vert_top)
-        lines.append(line)
+    # Close caps
+    faces.extend(fanClose(loops[0], 0, closed = True, flipped = True))
+    faces.extend(fanClose(loops[-1], 1))
 
-    #fill the surface
-    for i in range(len(lines) -1):
-        faces.extend(bridgeLoops(lines[-(i+1)], lines[-(i+2)], False))
-    #close cups
-    for i in range(len(lines) -1):
-        faces.append((lines[i][-1], lines[i+1][-1], vert_top))
-        faces.append((lines[-(i+1)][0], lines[-(i+2)][0], vert_bottom))
-
-    if closed:
-        faces.extend(bridgeLoops(lines[0], lines[-1], False))
-        faces.append((lines[-1][-1], lines[0][-1], vert_top))
-        faces.append((lines[0][0], lines[-1][0], vert_bottom))
-
-    #fill the walls if not closed
-    if not closed:
-        pass
+    # Bridge all loops
+    for i in range(1, len(loops)):
+        faces.extend(bridgeLoops(loops[i - 1], loops[i], True))
 
     if centered:
-        for v in verts:
-            v.z -= height /2
-    if orientation == 'X':
-        for v in verts:
-            tmp = v.x
-            v.x = v.z
-            v.z = -tmp
-    elif orientation == 'Y':
-        for v in verts:
-            tmp = v.y
-            v.y = v.z
-            v.z = -tmp
+        move_V(verts, Vector((0, 0, -height / 2)))
 
     return verts, edges, faces
 
-class MakePrimitive_cone(bpy.types.Operator):
-    """Edit object as primitive cone"""
-    bl_idname = "mesh.primitive_cone"
-    bl_label = "Cone"
-    bl_options = {'UNDO', 'REGISTER'}
 
-    orientations_list = [
-        ('Z', "Z-axis", ""),
-        ('X', "X-axis", ""),
-        ('Y', "Y-axis", "")]
+# Update functions
+def update_WCone_GEO(Wdata):
+    v, e, f = primitive_Cone_ME(**Wdata["animArgs"])
+    tmpMesh = bpy.data.meshes.new("TemporaryMesh")
+    tmpMesh.from_pydata(v, e, f)
+    tmpMesh.update()
 
-    radiuses = FloatVectorProperty(
-        name="Radiuses",
-        description="Top and bottom radiuses",
-        default=(0.0, 1.0),
-        min=0.0,
-        soft_min=0.0,
-        step=1,
-        precision=2,
-        subtype='NONE',
-        unit='LENGTH',
-        size=2)
+    bm = bmesh.new()
+    bm.from_mesh(tmpMesh)
+    for fa in bm.faces:
+        fa.smooth = Wdata.smoothed
+    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.free()
+    bpy.data.meshes.remove(tmpMesh)
+    bpy.data.meshes[Wdata["thisMesh"]].update()
+
+
+# getters
+def getRadTop(self):
+    return self["animArgs"]["radius_top"]
+
+
+def getRadMain(self):
+    return self["animArgs"]["radius_main"]
+
+
+def getHeight(self):
+    return self["animArgs"]["height"]
+
+
+def getSegPerim(self):
+    return self["animArgs"]["seg_perimeter"]
+
+
+def getSegHeight(self):
+    return self["animArgs"]["seg_height"]
+
+
+def getSegRad(self):
+    return self["animArgs"]["seg_radius"]
+
+
+def getCentered(self):
+    return self["animArgs"]["centered"]
+
+
+def getSmoothed(self):
+    return self["animArgs"]["smoothed"]
+
+
+# Setters _____________________________________________________________________
+def setRadTop(self, val):
+    self["animArgs"]["radius_top"] = val
+    update_WCone_GEO(self)
+
+
+def setRadMain(self, val):
+    self["animArgs"]["radius_main"] = val
+    update_WCone_GEO(self)
+
+
+def setHeight(self, val):
+    self["animArgs"]["height"] = val
+    update_WCone_GEO(self)
+
+
+def setSegPerim(self, val):
+    self["animArgs"]["seg_perimeter"] = val
+    update_WCone_GEO(self)
+
+
+def setSegHeight(self, val):
+    self["animArgs"]["seg_height"] = val
+    update_WCone_GEO(self)
+
+
+def setSegRad(self, val):
+    self["animArgs"]["seg_radius"] = val
+    update_WCone_GEO(self)
+
+
+def setCentered(self, val):
+    self["animArgs"]["centered"] = val
+    update_WCone_GEO(self)
+
+
+def setSmoothed(self, val):
+    self["animArgs"]["smoothed"] = val
+    update_WCone_GEO(self)
+
+
+class WConeData(bpy.types.PropertyGroup):
+
+    rad_top = FloatProperty(
+        name = "Radius top",
+        description = "Top Radius",
+        default = 0.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH",
+        set = setRadTop,
+        get = getRadTop
+    )
+
+    rad_main = FloatProperty(
+        name = "Radius bottom",
+        description = "Bottom Radius",
+        default = 1.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH",
+        set = setRadMain,
+        get = getRadMain
+    )
 
     height = FloatProperty(
-        name="Height",
-        description="Height of the cone",
-        default=2.0,
-        min=0.0,
-        soft_min=0.0,
-        step=1,
-        precision=2,
-        subtype='DISTANCE',
-        unit='LENGTH')
+        name = "Height",
+        description = "Height of the cone",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH",
+        set = setHeight,
+        get = getHeight
+    )
 
-    segmentation = IntVectorProperty(
-        name="Segmentation",
-        description="Subdivision of the cone",
-        default=(24, 1, 1),
-        min=1,
-        soft_min=1,
-        step=1,
-        subtype='NONE',
-        size=3)
+    seg_perimeter = IntProperty(
+        name = "Perim Segments",
+        description = "Subdivision on perimeter",
+        default = 24,
+        min = 3,
+        soft_min = 3,
+        step = 1,
+        subtype = 'NONE',
+        get = getSegPerim,
+        set = setSegPerim
+    )
 
-    section = FloatVectorProperty(
-        name="Section",
-        description="Section of the ring",
-        default=(0.0, 2*pi),
-        min=0.0,
-        max=2*pi,
-        soft_min=0.0,
-        soft_max=2*pi,
-        step=10,
-        precision=2,
-        subtype='NONE',
-        unit='ROTATION',
-        size=2)
+    seg_height = IntProperty(
+        name = "Height Segments",
+        description = "Subdivision of the height",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE',
+        get = getSegHeight,
+        set = setSegHeight
+    )
 
-    orientation = EnumProperty(
-        items=orientations_list,
-        name="Orientation",
-        description="Facing of the cone",
-        default='Z')
+    seg_radius = IntProperty(
+        name = "Radius Segments",
+        description = "Subdivision of the radius",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE',
+        get = getSegRad,
+        set = setSegRad
+    )
 
     centered = BoolProperty(
-        name="Centered",
-        description="Center the cone",
-        default=False)
+        name = "Centered",
+        description = "Set origin of the cone",
+        default = False,
+        get = getCentered,
+        set = setCentered
+    )
+
+    smoothed = BoolProperty(
+        name = "Smooth",
+        description = "Set smooth shading",
+        default = True,
+        get = getSmoothed,
+        set = setSmoothed
+    )
+
+
+class Make_WCone(bpy.types.Operator):
+    """Create primitive WCone mesh"""
+    bl_idname = "mesh.make_wcone"
+    bl_label = "WCone"
+    bl_options = {'UNDO', 'REGISTER'}
 
     def execute(self, context):
+        verts, edges, faces = primitive_Cone_ME(**WCone_Defaults)
+        c_mesh(context, verts, edges, faces, "WCone")
 
-        verts, edges, faces = primitive_Cone(
-            radius_bottom=self.radiuses[1],
-            radius_top=self.radiuses[0],
-            height=self.height,
-            seg_perimeter=self.segmentation[0],
-            seg_radius=self.segmentation[1],
-            seg_height=self.segmentation[2],
-            sector_from=self.section[0],
-            sector_to=self.section[1],
-            orientation=self.orientation,
-            centered=self.centered)
-
-        updateMesh(context, verts, edges, faces)
-
-        cone_data = {
-            "radius_bottom":self.radiuses[1],
-            "radius_top":self.radiuses[0],
-            "height":self.height,
-            "seg_perimeter":self.segmentation[0],
-            "seg_radius":self.segmentation[1],
-            "seg_height":self.segmentation[2],
-            "sector_from":self.section[0],
-            "sector_to":self.section[1],
-            "orientation":self.orientation,
-            "centered":self.centered}
-        context.object["isCone"] = cone_data
-
+        context.object.data.WType = 'WCONE'
+        context.object.data.WCone["animArgs"] = WCone_Defaults
+        context.object.data.WCone["thisMesh"] = context.object.data.name
+        bpy.ops.object.shade_smooth()
+        context.object.data.use_auto_smooth = True
         return {'FINISHED'}
 
-    def invoke(self, context, event):
-        if "isCone" in context.object:
-            cone_data = context.object["isCone"]
-            self.radiuses[1] = cone_data["radius_bottom"]
-            self.radiuses[0] = cone_data["radius_top"]
-            self.height = cone_data["height"]
-            self.segmentation[0] = cone_data["seg_perimeter"]
-            self.segmentation[1] = cone_data["seg_radius"]
-            self.segmentation[2] = cone_data["seg_height"]
-            self.section[0] = cone_data["sector_from"]
-            self.section[1] = cone_data["sector_to"]
-            self.orientation  = cone_data["orientation"]
-            self.centered = cone_data["centered"]
-        else:
-            self.radiuses[1] = 1.0
-            self.radiuses[0] = 0.0
-            self.height = 2.0
-            self.segmentation[0] = 24
-            self.segmentation[1] = 1
-            self.segmentation[2] = 1
-            self.section[0] = 0.0
-            self.section[1] = 2*pi
-            self.orientation  = 'Z'
-            self.centered = False
-        return self.execute(context)
+
+# Drawing panels ______________________________________________________________
+def drawWConePanel(self, context):
+    lOut = self.layout
+    WData = context.object.data.WCone
+
+    lOut.label("Type: WCone", icon="MESH_CONE")
+
+    row = lOut.row()
+    col = row.column(align = True)
+    col.prop(WData, "rad_top")
+    col.prop(WData, "rad_main")
+    col.prop(WData, "height")
+
+    col = row.column(align = True)
+    col.prop(WData, "seg_perimeter")
+    col.prop(WData, "seg_height")
+    col.prop(WData, "seg_radius")
+
+    row = lOut.row()
+    row.prop(WData, "centered")
+    row.prop(WData, "smoothed")
+
+
+# Register and unregister _____________________________________________________
+def registerWCone():
+    bpy.utils.register_class(Make_WCone)
+    bpy.utils.register_class(WConeData)
+    bpy.types.Mesh.WCone = PointerProperty(type = WConeData)
+
+
+def unregisterWCone():
+    bpy.utils.unregister_class(Make_WCone)
+    bpy.utils.unregister_class(WConeData)
+    del bpy.types.Mesh.WCone
