@@ -138,16 +138,16 @@ def UpdateWSphere(Wdata):
     bm.from_mesh(tmpMesh)
     for fa in bm.faces:
         fa.smooth = Wdata.smoothed
-    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.to_mesh(Wdata.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[Wdata["thisMesh"]].update()
+    Wdata.id_data.update()
 
 
 def Update_Size(Wdata):
     radius = Wdata["animArgs"]["radius"]
 
-    for vert in bpy.data.meshes[Wdata["thisMesh"]].vertices:
+    for vert in Wdata.id_data.vertices:
         vert.co.normalize()
         vert.co *= radius
 
@@ -163,7 +163,6 @@ class Make_WSphere(bpy.types.Operator):
         create_mesh_object(context, verts, edges, faces, "WSphere")
 
         context.object.data.WSphere["animArgs"] = WSphere_defaults
-        context.object.data.WSphere["thisMesh"] = context.object.data.name
 
         context.object.data.WType = 'WSPHERE'
         bpy.ops.object.shade_smooth()

@@ -223,10 +223,10 @@ def UpdateWScrew(Wdata):
     bm.from_mesh(tmpMesh)
     for fa in bm.faces:
         fa.smooth = Wdata.smoothed
-    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.to_mesh(Wdata.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[Wdata["thisMesh"]].update()
+    Wdata.id_data.update()
 
 
 # getters
@@ -365,7 +365,6 @@ class Make_WScrew(bpy.types.Operator):
 
         context.object.data.WType = 'WSCREW'
         context.object.data.WScrew["animArgs"] = WScrew_Defaults
-        context.object.data.WScrew["thisMesh"] = context.object.data.name
         bpy.ops.object.shade_smooth()
         context.object.data.use_auto_smooth = True
         context.object.data.auto_smooth_angle = pi / 3

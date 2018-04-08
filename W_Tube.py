@@ -254,7 +254,6 @@ class Make_WTube(bpy.types.Operator):
 
         context.object.data.WType = 'WTUBE'
         context.object.data.WTube["animArgs"] = WTube_Defaults
-        context.object.data.WTube["thisMesh"] = context.object.data.name
         bpy.ops.object.shade_smooth()
         context.object.data.use_auto_smooth = True
         return {'FINISHED'}
@@ -270,10 +269,10 @@ def UpdateWTube(WData):
     bm.from_mesh(tmpMesh)
     for f in bm.faces:
         f.smooth = WData.smoothed
-    bm.to_mesh(bpy.data.meshes[WData["thisMesh"]])
+    bm.to_mesh(WData.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[WData["thisMesh"]].update()
+    WData.id_data.update()
 
 
 # getters

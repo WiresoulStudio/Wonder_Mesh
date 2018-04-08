@@ -139,10 +139,10 @@ def update_WCone_GEO(Wdata):
     bm.from_mesh(tmpMesh)
     for fa in bm.faces:
         fa.smooth = Wdata.smoothed
-    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.to_mesh(Wdata.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[Wdata["thisMesh"]].update()
+    Wdata.id_data.update()
 
 
 # getters
@@ -325,7 +325,6 @@ class Make_WCone(bpy.types.Operator):
 
         context.object.data.WType = 'WCONE'
         context.object.data.WCone["animArgs"] = WCone_Defaults
-        context.object.data.WCone["thisMesh"] = context.object.data.name
         bpy.ops.object.shade_smooth()
         context.object.data.use_auto_smooth = True
         return {'FINISHED'}

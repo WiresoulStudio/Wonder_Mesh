@@ -116,10 +116,10 @@ def UpdateWRing(WData):
 
     bm = bmesh.new()
     bm.from_mesh(tmpMesh)
-    bm.to_mesh(bpy.data.meshes[WData["thisMesh"]])
+    bm.to_mesh(WData.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[WData["thisMesh"]].update()
+    WData.id_data.update()
 
 
 # Getters______________________________________________________________________
@@ -284,7 +284,6 @@ class Make_WRing(bpy.types.Operator):
 
         context.object.data.WType = 'WRING'
         context.object.data.WRing["animArgs"] = WRing_Defaults
-        context.object.data.WRing["thisMesh"] = context.object.data.name
 
         return {'FINISHED'}
 

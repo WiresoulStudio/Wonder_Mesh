@@ -69,10 +69,10 @@ def UpdateWPlane(Wdata):
 
     bm = bmesh.new()
     bm.from_mesh(tmpMesh)
-    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.to_mesh(Wdata.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[Wdata["thisMesh"]].update()
+    Wdata.id_data.update()
 
 
 # Getters______________________________________________________________________
@@ -190,7 +190,6 @@ class Make_WPlane(bpy.types.Operator):
 
         context.object.data.WType = 'WPLANE'
         context.object.data.WPlane["animArgs"] = WPlane_Defaults
-        context.object.data.WPlane["thisMesh"] = context.object.data.name
         return {'FINISHED'}
 
 

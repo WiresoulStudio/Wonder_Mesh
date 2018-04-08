@@ -150,10 +150,10 @@ def update_WCapsule_GEO(Wdata):
     bm.from_mesh(tmpMesh)
     for fa in bm.faces:
         fa.smooth = Wdata.smoothed
-    bm.to_mesh(bpy.data.meshes[Wdata["thisMesh"]])
+    bm.to_mesh(Wdata.id_data)
     bm.free()
     bpy.data.meshes.remove(tmpMesh)
-    bpy.data.meshes[Wdata["thisMesh"]].update()
+    Wdata.id_data.update()
 
 
 # getters
@@ -316,7 +316,6 @@ class Make_WCapsule(bpy.types.Operator):
 
         context.object.data.WType = 'WCAPSULE'
         context.object.data.WCapsule["animArgs"] = WCapsule_Defaults
-        context.object.data.WCapsule["thisMesh"] = context.object.data.name
         bpy.ops.object.shade_smooth()
         context.object.data.use_auto_smooth = True
         return {'FINISHED'}
