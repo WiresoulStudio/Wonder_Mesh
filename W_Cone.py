@@ -1,8 +1,8 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________16.12.2015______/
-# __Last_modified:__13.08.2017______/
-# __Version:________0.2_____________/
+# __Last_modified:__02.08.2018______/
+# __Version:________0.4_____________/
 # __________________________________/
 
 """
@@ -319,7 +319,96 @@ class Make_WCone(bpy.types.Operator):
     bl_label = "WCone"
     bl_options = {'UNDO', 'REGISTER'}
 
+    rad_top = FloatProperty(
+        name = "Radius top",
+        description = "Top Radius",
+        default = 0.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH"
+    )
+
+    rad_main = FloatProperty(
+        name = "Radius bottom",
+        description = "Bottom Radius",
+        default = 1.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH"
+    )
+
+    height = FloatProperty(
+        name = "Height",
+        description = "Height of the cone",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        precision = 2,
+        unit = "LENGTH"
+    )
+
+    seg_perimeter = IntProperty(
+        name = "Perim Segments",
+        description = "Subdivision on perimeter",
+        default = 24,
+        min = 3,
+        soft_min = 3,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    seg_height = IntProperty(
+        name = "Height Segments",
+        description = "Subdivision of the height",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    seg_radius = IntProperty(
+        name = "Radius Segments",
+        description = "Subdivision of the radius",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    centered = BoolProperty(
+        name = "Centered",
+        description = "Set origin of the cone",
+        default = False
+    )
+
     def execute(self, context):
+
+        """
+        WCone_Defaults = {
+        "radius_main": 1.0,
+        "radius_top": 0.0,
+        "height": 2.0,
+        "seg_perimeter": 24,
+        "seg_height": 1,
+        "seg_radius": 1,
+        "centered": False,
+        "smoothed": True
+        """
+        WCone_Defaults["radius_main"] = self.rad_main
+        WCone_Defaults["radius_top"] = self.rad_top
+        WCone_Defaults["height"] = self.height
+        WCone_Defaults["seg_perimeter"] = self.seg_perimeter
+        WCone_Defaults["seg_height"] = self.seg_height
+        WCone_Defaults["seg_radius"] = self.seg_radius
+        WCone_Defaults["centered"] = self.centered
+
         verts, edges, faces = primitive_Cone_ME(**WCone_Defaults)
         c_mesh(context, verts, edges, faces, "WCone")
 

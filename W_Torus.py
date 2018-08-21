@@ -1,7 +1,7 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________03.04.2018______/
-# __Last_modified:__03.04.2018______/
+# __Last_modified:__21.08.2018______/
 # __Version:________0.1_____________/
 # __________________________________/
 
@@ -332,7 +332,118 @@ class Make_WTorus(bpy.types.Operator):
     bl_label = "WTorus"
     bl_options = {'UNDO', 'REGISTER'}
 
+
+    radius_main = FloatProperty(
+        name = "Major",
+        description = "Main Radius",
+        default = 1.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    radius_minor = FloatProperty(
+        name = "Minor",
+        description = "Minor Radius",
+        default = 0.5,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    radius_in = FloatProperty(
+        name = "Inner",
+        description = "Inner Radius",
+        default = 0.5,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    radius_out = FloatProperty(
+        name = "Outer",
+        description = "Outer Radius",
+        default = 1.5,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    seg_main = IntProperty(
+        name = "Main",
+        description = "Segmentation on main perimeter",
+        default = 24,
+        min = 3,
+        soft_min = 3,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    seg_minor = IntProperty(
+        name = "Minor",
+        description = "Segmentation of the minor perimeter",
+        default = 12,
+        min = 3,
+        soft_min = 3,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    sec_from = FloatProperty(
+        name = "From",
+        description = "Start angle of the section",
+        default = 0.0,
+        min = 0.0,
+        max = 2 * PI,
+        soft_min = 0.0,
+        soft_max = 2 * PI,
+        step = 10,
+        unit = "ROTATION"
+    )
+
+    sec_to = FloatProperty(
+        name = "To",
+        description = "End angle of the section",
+        default = 2 * PI,
+        min = 0.0,
+        max = 2 * PI,
+        soft_min = 0.0,
+        soft_max = 2 * PI,
+        step = 10,
+        unit = "ROTATION"
+    )
+
+    smoothed = BoolProperty(
+        name = "Smooth",
+        description = "Set smooth shading",
+        default = True
+    )
+
     def execute(self, context):
+
+        """
+        WTorus_Defaults = {
+        "radius_main": 2.0,
+        "radius_minor": 0.5,
+        "seg_main": 24,
+        "seg_minor": 12,
+        "sec_from": 0.0,
+        "sec_to": 2 * PI,
+        "smoothed": True
+        """
+
+        WTorus_Defaults["radius_main"] = self.radius_main
+        WTorus_Defaults["radius_minor"] = self.radius_minor
+        WTorus_Defaults["seg_main"] = self.seg_main
+        WTorus_Defaults["seg_minor"] = self.seg_minor
+        WTorus_Defaults["sec_from"] = self.sec_from
+        WTorus_Defaults["sec_to"] = self.sec_to
+        WTorus_Defaults["smoothed"] = self.smoothed
+
         verts, edges, faces = primitive_Torus_ME(**WTorus_Defaults)
         c_mesh(context, verts, edges, faces, "WTorus")
 

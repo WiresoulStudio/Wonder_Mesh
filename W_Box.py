@@ -1,8 +1,8 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________15.12.2015______/
-# __Last_modified:__05.04.2018______/
-# __Version:________0.3_____________/
+# __Last_modified:__02.08.2018______/
+# __Version:________0.4_____________/
 # __________________________________/
 
 """
@@ -44,6 +44,13 @@ def primitive_Box(
                 seg_y = 1,
                 seg_z = 1,
                 centered = True):
+
+    if seg_x < 1:
+        seg_x = 1
+    if seg_y < 1:
+        seg_y = 1
+    if seg_z < 1:
+        seg_z = 1
 
     verts = []
     edges = []
@@ -118,7 +125,7 @@ def primitive_Box(
 
     # faces bottom
     for i in range(seg_y):
-        faces.extend(bridgeLoops(bottom_lines[i], bottom_lines[i + 1], False))
+        faces.extend(bridgeLoops(bottom_lines[i+1], bottom_lines[i], False))
 
     # faces top
     for i in range(seg_y):
@@ -302,7 +309,79 @@ class Make_WBox(bpy.types.Operator):
     bl_label = "WBox"
     bl_options = {'UNDO', 'REGISTER'}
 
+    size_x = FloatProperty(
+        name = "X:",
+        description = "Size of the WBox",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit='LENGTH'
+    )
+
+    size_y = FloatProperty(
+        name = "Y:",
+        description = "Size of the WBox",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit='LENGTH'
+    )
+
+    size_z = FloatProperty(
+        name = "Z:",
+        description = "Size of the WBox",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit='LENGTH'
+    )
+
+    seg_x = IntProperty(
+        name = "X:",
+        description = "Segmentation of the WBox",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1
+    )
+
+    seg_y = IntProperty(
+        name = "Y:",
+        description = "Segmentation of the WBox",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1
+    )
+
+    seg_z = IntProperty(
+        name = "Z:",
+        description = "Segmentation of the WBox",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1
+    )
+
+    centered = BoolProperty(
+        name = "Centered",
+        description = "Where is origin of the WBox",
+        default = True
+    )
+
     def execute(self, context):
+
+        WBox_Defaults["size_x"] = self.size_x
+        WBox_Defaults["size_y"] = self.size_y
+        WBox_Defaults["size_z"] = self.size_z
+        WBox_Defaults["seg_x"] = self.seg_x
+        WBox_Defaults["seg_y"] = self.seg_y
+        WBox_Defaults["seg_z"] = self.seg_z
+        WBox_Defaults["centered"] = self.centered
+
         verts, edges, faces = primitive_Box(**WBox_Defaults)
         create_mesh_object(context, verts, edges, faces, "WBox")
 

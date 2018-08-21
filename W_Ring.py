@@ -1,7 +1,7 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________16.12.2015______/
-# __Last_modified:__07.04.2018______/
+# __Last_modified:__21.08.2018______/
 # __Version:________0.3_____________/
 # __________________________________/
 
@@ -277,7 +277,94 @@ class Make_WRing(bpy.types.Operator):
     bl_label = "WRing"
     bl_options = {'UNDO', 'REGISTER'}
 
+    radius_out = FloatProperty(
+        name="Outer",
+        description="Outer radius",
+        default=1.0,
+        min=0.0,
+        soft_min=0.0,
+        step=1,
+        unit='LENGTH'
+    )
+
+    use_inner = BoolProperty(
+        name="Use inner",
+        description="use inner radius",
+        default=True
+    )
+
+    radius_in = FloatProperty(
+        name="Inner",
+        description="Inner radius",
+        default=0.0,
+        min=0.0,
+        soft_min=0.0,
+        step=1,
+        unit='LENGTH'
+    )
+
+    seg_perimeter = IntProperty(
+        name="Perimeter",
+        description="Subdivision of the perimeter",
+        default=24,
+        min=3,
+        soft_min=3,
+        step=1
+        )
+
+    seg_radius = IntProperty(
+        name="Radius",
+        description="Subdivision of the radius",
+        default=1,
+        min=1,
+        soft_min=1,
+        step=1
+        )
+
+    sector_from = FloatProperty(
+        name="From",
+        description="Setor from",
+        default=0.0,
+        min=0.0,
+        soft_min=0.0,
+        max = 2 * pi,
+        soft_max = 2 * pi,
+        step=10,
+        unit='ROTATION'
+    )
+
+    sector_to = FloatProperty(
+        name="From",
+        description="Setor from",
+        default=2 * pi,
+        min=0.0,
+        soft_min=0.0,
+        max = 2 * pi,
+        soft_max = 2 * pi,
+        step=10,
+        unit='ROTATION'
+    )
+
     def execute(self, context):
+
+        """
+        WRing_Defaults
+        "radius_out": 1.0,
+        "use_inner": True,
+        "radius_in": 0.0,
+        "seg_perimeter": 24,
+        "seg_radius": 1,
+        "sector_from": 0.0,
+        "sector_to": 2 * pi
+        """
+
+        WRing_Defaults["radius_out"] = self.radius_out
+        WRing_Defaults["use_inner"] = self.use_inner
+        WRing_Defaults["radius_in"] = self.radius_in
+        WRing_Defaults["seg_perimeter"] = self.seg_perimeter
+        WRing_Defaults["seg_radius"] = self.seg_radius
+        WRing_Defaults["sector_from"] = self.sector_from
+        WRing_Defaults["sector_to"] = self.sector_to
 
         verts, edges, faces = primitive_Ring(**WRing_Defaults)
         create_mesh_object(context, verts, edges, faces, "WRing")

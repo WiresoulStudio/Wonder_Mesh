@@ -1,8 +1,8 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________15.12.2015______/
-# __Last_modified:__05.04.2018______/
-# __Version:________0.3_____________/
+# __Last_modified:__21.08.2018______/
+# __Version:________0.4_____________/
 # __________________________________/
 
 import bpy
@@ -124,7 +124,7 @@ def setCentered(self, val):
 
 class WPlaneData(bpy.types.PropertyGroup):
     size_x = FloatProperty(
-        name = "X:",
+        name = "X",
         description = "Size of the WPlane",
         default = 2.0,
         min = 0.0,
@@ -136,7 +136,7 @@ class WPlaneData(bpy.types.PropertyGroup):
     )
 
     size_y = FloatProperty(
-        name = "Y:",
+        name = "Y",
         description = "Size of the WPlane",
         default = 2.0,
         min = 0.0,
@@ -148,7 +148,7 @@ class WPlaneData(bpy.types.PropertyGroup):
     )
 
     seg_x = IntProperty(
-        name = "X:",
+        name = "X",
         description = "Segmentation of the WPlane",
         default = 1,
         min = 1,
@@ -159,7 +159,7 @@ class WPlaneData(bpy.types.PropertyGroup):
     )
 
     seg_y = IntProperty(
-        name = "Y:",
+        name = "Y",
         description = "Segmentation of the WPlane",
         default = 1,
         min = 1,
@@ -184,7 +184,66 @@ class Make_WPlane(bpy.types.Operator):
     bl_label = "WPlane"
     bl_options = {'UNDO', 'REGISTER'}
 
+    size_x = FloatProperty(
+        name = "X",
+        description = "Size of the WPlane",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit='LENGTH'
+    )
+
+    size_y = FloatProperty(
+        name = "Y",
+        description = "Size of the WPlane",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit='LENGTH'
+    )
+
+    seg_x = IntProperty(
+        name = "X",
+        description = "Segmentation of the WPlane",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1
+    )
+
+    seg_y = IntProperty(
+        name = "Y",
+        description = "Segmentation of the WPlane",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1
+    )
+
+    centered = BoolProperty(
+        name = "Centered",
+        description = "Where is origin of the WPlane",
+        default = True
+    )
+
     def execute(self, context):
+        """
+        WPlane_Defaults = {
+        "size_x": 2.0,
+        "size_y": 2.0,
+        "seg_x": 1,
+        "seg_y": 1,
+        "centered": True
+        """
+
+        WPlane_Defaults["size_x"] = self.size_x
+        WPlane_Defaults["size_y"] = self.size_y
+        WPlane_Defaults["seg_x"] = self.seg_x
+        WPlane_Defaults["seg_y"] = self.seg_y
+        WPlane_Defaults["centered"] = self.centered
+
         verts, edges, faces = WPlane_mesh(**WPlane_Defaults)
         create_mesh_object(context, verts, edges, faces, "WPlane")
 

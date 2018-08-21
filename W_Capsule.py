@@ -1,8 +1,8 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________03.04.2018______/
-# __Last_modified:__03.04.2018______/
-# __Version:________0.1_____________/
+# __Last_modified:__02.08.2018______/
+# __Version:________0.2_____________/
 # __________________________________/
 
 """
@@ -310,7 +310,71 @@ class Make_WCapsule(bpy.types.Operator):
     bl_label = "WCapsule"
     bl_options = {'UNDO', 'REGISTER'}
 
+    radius = FloatProperty(
+        name = "Radius",
+        description = "Radius",
+        default = 0.5,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    height = FloatProperty(
+        name = "Height",
+        description = "Height of the capsule",
+        default = 2.0,
+        min = 0.0,
+        soft_min = 0.0,
+        step = 1,
+        unit = "LENGTH"
+    )
+
+    seg_perimeter = IntProperty(
+        name = "Perim Segments",
+        description = "Subdivision on perimeter",
+        default = 24,
+        min = 3,
+        soft_min = 3,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    seg_height = IntProperty(
+        name = "Height Segments",
+        description = "Subdivision of the height",
+        default = 1,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    seg_caps = IntProperty(
+        name = "Caps Segments",
+        description = "Subdivision of the caps",
+        default = 6,
+        min = 1,
+        soft_min = 1,
+        step = 1,
+        subtype = 'NONE'
+    )
+
+    centered = BoolProperty(
+        name = "Centered",
+        description = "Set origin of the cone",
+        default = False
+    )
+
     def execute(self, context):
+
+        WCapsule_Defaults["radius"] = self.radius
+        WCapsule_Defaults["height"] = self.height
+        WCapsule_Defaults["seg_perimeter"] = self.seg_perimeter
+        WCapsule_Defaults["seg_height"] = self.seg_height
+        WCapsule_Defaults["seg_caps"] = self.seg_caps
+        WCapsule_Defaults["centered"] = self.centered
+
         verts, edges, faces = primitive_Capsule_ME(**WCapsule_Defaults)
         c_mesh(context, verts, edges, faces, "WCapsule")
 

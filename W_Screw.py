@@ -1,7 +1,7 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________15.12.2015______/
-# __Last_modified:__07.04.2018______/
+# __Last_modified:__21.08.2018______/
 # __Version:________0.3_____________/
 # __________________________________/
 
@@ -358,7 +358,77 @@ class Make_WScrew(bpy.types.Operator):
     bl_label = "WScrew"
     bl_options = {'UNDO', 'REGISTER'}
 
+    rounds = IntProperty(
+        name="Rounds",
+        description="Iterations of the screw",
+        default=5,
+        min=1,
+        soft_min=1
+    )
+
+    segments = IntProperty(
+        name="Segments",
+        description="Perimetr segments",
+        default=12,
+        min=3,
+        soft_min=3
+    )
+
+    height = FloatProperty(
+        name="Height",
+        description="Height of the screw",
+        default=2.0,
+        min=0.0,
+        soft_min=0.0,
+        step=1,
+        precision=2,
+        unit='LENGTH'
+    )
+
+    radius_1 = FloatProperty(
+        name="Major",
+        description="Major radius",
+        default=0.5,
+        min=0.0,
+        soft_min=0.0,
+        step=1,
+        unit='LENGTH'
+    )
+
+    radius_2 = FloatProperty(
+        name="Minor",
+        description="Minor radius",
+        default=0.6,
+        min=0.0,
+        soft_min=0.0,
+        step=1,
+        unit='LENGTH'
+    )
+
+    smoothed = BoolProperty(
+        name="Smooth",
+        description="Smooth shading",
+        default=True
+    )
+
     def execute(self, context):
+
+        """
+        WScrew_Defaults = {
+        "rounds": 5,
+        "segments": 12,
+        "height": 2.0,
+        "radius_1": 0.5,
+        "radius_2": 0.6,
+        "smoothed": True
+        """
+
+        WScrew_Defaults["rounds"] = self.rounds
+        WScrew_Defaults["segments"] = self.segments
+        WScrew_Defaults["height"] = self.height
+        WScrew_Defaults["radius_1"] = self.radius_1
+        WScrew_Defaults["radius_2"] = self.radius_2
+        WScrew_Defaults["smoothed"] = self.smoothed
 
         verts, edges, faces = primitive_Screw(**WScrew_Defaults)
         create_mesh_object(context, verts, edges, faces, "WScrew")

@@ -1,7 +1,7 @@
 # __________________________________/
 # __Author:_________Vit_Prochazka___/
 # __Created:________13.08.2017______/
-# __Last_modified:__07.04.2018______/
+# __Last_modified:__21.08.2018______/
 # __Version:________0.2_____________/
 # __________________________________/
 
@@ -158,8 +158,110 @@ class Make_WSphere(bpy.types.Operator):
     bl_label = "WSphere"
     bl_options = {'UNDO', 'REGISTER'}
 
+    radius = FloatProperty(
+        name="Radius",
+        description="Radius of the Sphere",
+        default=1.0,
+        min=0.0,
+        soft_min=0.0001,
+        step=1,
+        unit='LENGTH'
+    )
+
+    segments = IntProperty(
+        name="Segments",
+        description="Segments on diametr",
+        default=24,
+        min=3,
+        soft_min=3,
+        step=1,
+        subtype='NONE'
+    )
+
+    rings = IntProperty(
+        name="Rings",
+        description="Rings",
+        default=12,
+        min=2,
+        soft_min=2,
+        step=1,
+        subtype='NONE'
+    )
+
+    divisions = IntProperty(
+        name="Division",
+        description="Divisions of the base mesh",
+        default=2,
+        min=0,
+        soft_min=0,
+        step=1,
+        subtype='NONE'
+    )
+
+    Topos = [
+        ('UV', "UV", "", 1),
+        ('TETRA', "Tetrahedron", "", 2),
+        ('CUBE', "Cube", "", 3),
+        ('OCTA', "Octahedron", "", 4),
+        ('ICOSA', "Icosahedron", "", 5)
+    ]
+
+    base = EnumProperty(
+        items = Topos,
+        name = "Topology",
+        description = "Type of sphere topology",
+        default = 'CUBE'
+    )
+
+    smoothed = BoolProperty(
+        name="Smooth",
+        description="Smooth shading",
+        default=True
+    )
+
+    tris = BoolProperty(
+        name="Tris",
+        description="Triangulate divisions",
+        default=False
+    )
+
     def execute(self, context):
-        verts, edges, faces = primitive_polySphere()
+
+        """
+        WSphere_defaults = {
+        "radius": 1.0,
+        "segments": 24,
+        "rings": 12,
+        "base": 3,
+        "divisions": 2,
+        "tris": False,
+        "smoothed": True
+        """
+
+        WSphere_defaults["radius"] = self.radius
+        WSphere_defaults["segments"] = self.segments
+        WSphere_defaults["rings"] = self.rings
+        WSphere_defaults["base"] = self.base
+        WSphere_defaults["divisions"] = self.divisions
+        WSphere_defaults["tris"] = self.tris
+        WSphere_defaults["smoothed"] = self.smoothed
+
+        #verts, edges, faces = primitive_polySphere(**WSphere_defaults)
+
+        if self.base == "UV":
+            verts, edges, faces = primitive_UVSphere(
+                radius = WSphere_defaults["radius"],
+                segments = WSphere_defaults["segments"],
+                rings = WSphere_defaults["rings"]
+            )
+        else:
+            verts, edges, faces = primitive_polySphere(
+                base = WSphere_defaults["base"],
+                radius = WSphere_defaults["radius"],
+                divisions = WSphere_defaults["divisions"],
+                tris = WSphere_defaults["tris"]
+            )
+
         create_mesh_object(context, verts, edges, faces, "WSphere")
 
         context.object.data.WSphere["animArgs"] = WSphere_defaults
